@@ -33,6 +33,10 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
 
         T2T.process_data(post_data)
 
+    def do_GET(self):
+        self.send_error(418, "I'm a teapot")
+
+
 class TTN2Traccar():
     def __init__(self, conf: dict):
         # Initialize the class.
