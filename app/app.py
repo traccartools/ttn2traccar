@@ -74,7 +74,10 @@ class TTN2Traccar():
 
 
     def process_data(self, data):
-        j = json.loads(data)
+        try:
+            j = json.loads(data)
+        except ValueError as e:
+            return
         # print(json.dumps(j, indent=2))
 
         um = j.get("uplink_message")
@@ -82,7 +85,7 @@ class TTN2Traccar():
         
         if not decpayload:
             return
-
+        
         lat = decpayload['latitude']
         lon = decpayload['longitude']
 
@@ -90,23 +93,37 @@ class TTN2Traccar():
             logging.debug("Lat or Lon not found")
             return
 
-        dev_id = j.get("end_device_ids").get("device_id")
+        dev_id = j["end_device_ids"]["device_id"]
         timestamp = int(datetime.timestamp(dp.parse(um.get("received_at"))))
 
         query_string = ""
 
-        
-        for attr in ['altitude', 'speed', 'course']:
+        for attr in ['altitude', 'speed', 'course', 'hdop', 'sats']:
             if attr in decpayload:
                 #traccar needs bearing instead of course
                 query_string += f"&{attr.replace('course','bearing')}={decpayload[attr]}"
 
         # extra attributes
-        # for attr in ['from', 'to', 'via', 'symbol', 'symbol_table', 'comment']:
-        #     if attr in decpayload:
-        #         query_string += f"&APRS_{attr}={decpayload[attr]}"
-                
+        try:
+            lora = um["settings"]["data_rate"]["lora"]
+            for attr in ['bandwidth', 'spreading_factor']:
+                if attr in lora:
+                    query_string += f"&TTN_{attr}={lora[attr]}"
+        except KeyError:
+            pass
+
+        try:
+            #frequency
+            query_string += f"&TTN_Frequency=%s" % um["settings"]["data_rate"]["frequency"]
+        except KeyError:
+            pass
         
+        try:
+            # gateways
+            query_string += f"&TTN_Gateways=%s" % len(um['rx_metadata'])
+        except KeyError:
+            pass
+
         query_string = f"id={dev_id}&lat={lat}&lon={lon}&timestamp={timestamp}" + query_string
         try:
             self.tx_to_traccar(query_string)
