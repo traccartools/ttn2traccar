@@ -91,7 +91,7 @@ class TTN2Traccar():
             return
 
         dev_id = j.get("end_device_ids").get("device_id")
-        timestamp = int(datetime.timestamp(dp.parse(um.get("settings").get("time"))))
+        timestamp = int(datetime.timestamp(dp.parse(um.get("received_at"))))
 
         query_string = ""
 
