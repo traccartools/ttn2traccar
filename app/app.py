@@ -113,14 +113,12 @@ class TTN2Traccar():
             pass
 
         try:
-            #frequency
-            query_string += f"&TTN_Frequency=%s" % um["settings"]["data_rate"]["frequency"]
+            query_string += f"&TTN_frequency=%s" % um["settings"]["frequency"]
         except KeyError:
             pass
         
         try:
-            # gateways
-            query_string += f"&TTN_Gateways=%s" % len(um['rx_metadata'])
+            query_string += f"&TTN_gateways=%s" % len(um['rx_metadata'])
         except KeyError:
             pass
 
