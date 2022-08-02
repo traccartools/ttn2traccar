@@ -16,12 +16,14 @@ Clone this repo and then add this to your `docker-compose.yml` file:
       - 5299:5299 #Port change
     environment:
       - "TRACCAR_HOST=https://traccar.example.com" # optional, defaults to http://traccar:8082
+      - "TRACCAR_OSMAND=http://traccar.example.com:5055"  # optional, defaults to http://[TRACCAR_HOST]:5055
       - "LOG_LEVEL=DEBUG"  # optional, defaults to INFO
     restart: unless-stopped
   ```
   
   * `TRACCAR_HOST` is your Traccar server's URI/URL. If run in the same docker-compose stack, name your Traccar service `traccar` and omit this env var.
-
+  * `TRACCAR_OSMAND` is your Traccar server's Osmand protocol URL
+  
 
 
 

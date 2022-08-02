@@ -9,6 +9,7 @@ import dateutil.parser as dp
 
 from datetime import datetime
 import json
+from urllib.parse import urlparse, urlunparse
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
@@ -44,6 +45,7 @@ class TTN2Traccar():
 
         self.port = conf.get("Port")
         self.traccar_host = conf.get("TraccarHost")
+        self.traccar_osmand = conf.get("TraccarOsmand")
 
     def listen(self):
         server = ThreadingHTTPServer(('0.0.0.0', self.port), HTTPRequestHandler)
@@ -58,7 +60,7 @@ class TTN2Traccar():
     def tx_to_traccar(self, query: str):
         # Send position report to Traccar server
         LOGGER.debug(f"tx_to_traccar({query})")
-        url = f"{self.traccar_host}/?{query}"
+        url = f"{self.traccar_osmand}/?{query}"
         print(url)
         try:
             post = requests.post(url)
@@ -146,9 +148,15 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, sig_handler)
     signal.signal(signal.SIGINT, sig_handler)
     
+    def OsmandURL(url):
+        u = urlparse(url)
+        u = u._replace(scheme="http", netloc=u.hostname+":5055", path = "")
+        return(urlunparse(u))
+        
     config = {}
     config["Port"] = os.environ.get("PORT", DEFAULT_PORT)
     config["TraccarHost"] = os.environ.get("TRACCAR_HOST", DEFAULT_TRACCAR_HOST)
+    config["TraccarOsmand"] = os.environ.get("TRACCAR_OSMAND", OsmandURL(config["TraccarHost"]))
 
     T2T = TTN2Traccar(config)
     # T2T.read_testfile('SamplePost.json')
