@@ -75,27 +75,18 @@ class TTN2Traccar():
             logging.exception(f"Error sending to {url}")
 
 
-    def process_data(self, data):
-        try:
-            j = json.loads(data)
-        except ValueError as e:
-            return
-        # print(json.dumps(j, indent=2))
-
-        um = j.get("uplink_message")
-        decpayload = um.get("decoded_payload")
+    def ttnqry(self, j):
+        um = j.get("uplink_message", {})
+        decpayload = um.get("decoded_payload", {})
         
-        if not decpayload:
-            return
-        
-        lat = decpayload['latitude']
-        lon = decpayload['longitude']
+        lat = decpayload.get("latitude")
+        lon = decpayload.get("longitude")
 
         if not (lat and lon):
             logging.debug("Lat or Lon not found")
-            return
+            return()
 
-        dev_id = j["end_device_ids"]["device_id"]
+        dev_id = j["end_device_ids"]["dev_eui"]
         timestamp = int(datetime.timestamp(dp.parse(um.get("received_at"))))
 
         query_string = ""
@@ -106,29 +97,65 @@ class TTN2Traccar():
                 query_string += f"&{attr.replace('course','bearing')}={decpayload[attr]}"
 
         # extra attributes
-        try:
-            lora = um["settings"]["data_rate"]["lora"]
-            for attr in ['bandwidth', 'spreading_factor']:
-                if attr in lora:
-                    query_string += f"&TTN_{attr}={lora[attr]}"
-        except KeyError:
-            pass
+        lora = um.get("settings", {}).get("data_rate", {}).get("lora", {})
 
-        try:
-            query_string += f"&TTN_frequency=%s" % um["settings"]["frequency"]
-        except KeyError:
-            pass
+        query_string += "&TTN_bandwidth=%s" % lora.get("bandwidth", "")
+        query_string += "&TTN_spreadingfactor%s" % lora.get("spreading_factor", "")
+        query_string += "&TTN_frequency=%s" % um.get("settings", {}).get("frequency", "")
+        query_string += "&TTN_gateways=%s" % len(um.get("rx_metadata"))
+
+
+        return(f"id={dev_id}&lat={lat}&lon={lon}&timestamp={timestamp}" + query_string)
+
+
+    def heliumqry(self, j):
+        print("heliumqry")
+        decpayload = j.get("decoded", {}).get("payload",{})
         
-        try:
-            query_string += f"&TTN_gateways=%s" % len(um['rx_metadata'])
-        except KeyError:
-            pass
+        lat = decpayload.get("latitude")
+        lon = decpayload.get("longitude")
 
-        query_string = f"id={dev_id}&lat={lat}&lon={lon}&timestamp={timestamp}" + query_string
+        if not (lat and lon):
+            logging.debug("Lat or Lon not found")
+            return()
+
+        dev_id = j.get("dev_eui")
+        timestamp = int(j.get("reported_at")/1000)
+       
+        query_string = ""
+
+        for attr in ['altitude', 'speed', 'course', 'hdop', 'sats']:
+            if attr in decpayload:
+                #traccar needs bearing instead of course
+                query_string += f"&{attr.replace('course','bearing')}={decpayload[attr]}"
+
+        # extra attributes
+        query_string += "&Helium_spreading=%s" % j.get("hotspots", {})[0].get("spreading", "")
+        query_string += "&Helium_frequency=%s" % j.get("hotspots", {})[0].get("frequency", "")
+        query_string += "&Helium_gateways=%s" % len(j.get("hotspots"))
+
+        return(f"id={dev_id}&lat={lat}&lon={lon}&timestamp={timestamp}" + query_string)
+
+    def process_data(self, data):
         try:
-            self.tx_to_traccar(query_string)
-        except ValueError:
-            logging.warning(f"id={dev_id}")
+            j = json.loads(data)
+        except ValueError as e:
+            return
+        # print(json.dumps(j, indent=2))
+
+        #parsing
+        if j.get("uplink_message", {}).get("decoded_payload"): # ttn
+            logging.debug("ttn message")
+            query_string = self.ttnqry(j)
+            
+        elif j.get("decoded", {}).get("payload"): # helium
+            logging.debug("helium message")
+            query_string = self.heliumqry(j)
+
+        else:
+            return
+
+        self.tx_to_traccar(query_string)
 
 
 
