@@ -1,6 +1,6 @@
 # About
 
-This little Docker container will listen on port 5299 for TTN webhooks, and send location data to a [Traccar](https://www.traccar.org/) server.  
+This little Docker container will listen on port 5299 for TTN and Helium integrations, and send location data to a [Traccar](https://www.traccar.org/) server.  
 
 ## How to
 
@@ -29,11 +29,19 @@ Clone this repo and then add this to your `docker-compose.yml` file:
 
 ### Traccar
 
-Create a device with ID = TTN End device ID (eui-xxxx...)
+Create a device with ID = DevEUI (Device EUI)
 
 ### TTN
 
 Add payload formatter to decode location data (latitude, longitude, altitude, speed, course)
 
-Add webhook integration, sending uplink message to your server http://foo.bar:5299
+Add webhook integration, sending uplink message to http://foo.bar:5299 (replace with your server url)
+
+### Helium
+
+Add funcion to decode location data (latitude, longitude, altitude, speed, course)
+
+Add an integration, method POST, endpoint URL http://foo.bar:5299 (replace with your server url)
+
+Add a flow joining device, function and integration
 
