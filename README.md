@@ -39,7 +39,7 @@ Add webhook integration, sending uplink message to http://foo.bar:5299 (replace 
 
 ### Helium
 
-Add funcion to decode location data (latitude, longitude, altitude, speed, course)
+Add function to decode location data (latitude, longitude, altitude, speed, course)
 
 Add an integration, method POST, endpoint URL http://foo.bar:5299 (replace with your server url)
 
