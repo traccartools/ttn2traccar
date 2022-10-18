@@ -10,10 +10,10 @@ Clone this repo and then add this to your `docker-compose.yml` file:
 
 ```yaml
   ttn2traccar:
-    build: https://github.com/itec78/ttn2traccar.git
+    build: https://github.com/traccartools/ttn2traccar.git
     container_name: ttn2traccar  # optional
     ports:
-      - 5299:5299 #Port change
+      - 5299:5299
     environment:
       - "TRACCAR_HOST=https://traccar.example.com" # optional, defaults to http://traccar:8082
       - "TRACCAR_OSMAND=http://traccar.example.com:5055"  # optional, defaults to http://[TRACCAR_HOST]:5055
